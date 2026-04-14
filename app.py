@@ -1,3 +1,7 @@
+#pip install flask
+#pip install flask
+#cd bezpieczna_strona-main
+#python app.py
 from flask import Flask, render_template, request
 import os, uuid
 from werkzeug.utils import secure_filename
