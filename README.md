@@ -1,6 +1,6 @@
 
 #pip install flask
-#pip install flask
+#pip install Pillow
 #cd bezpieczna_strona-main
 #python app.py
 
