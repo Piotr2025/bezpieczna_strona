@@ -1,4 +1,10 @@
-<img width="797" height="264" alt="image" src="https://github.com/user-attachments/assets/3230f1c7-83ee-476c-a9ad-dad2da58ccd4" />
+
+#pip install flask
+#pip install flask
+#cd bezpieczna_strona-main
+#python app.py
+
+<img width="770" height="336" alt="image" src="https://github.com/user-attachments/assets/ab6c8556-506a-483e-9a38-a7391f44fea0" />
 
 
 Zastosowane zabezpieczenia
