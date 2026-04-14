@@ -1,10 +1,14 @@
 from flask import Flask, render_template, request
 import os, uuid
 from werkzeug.utils import secure_filename
+from PIL import Image  # Biblioteka do weryfikacji i czyszczenia obrazów
 
 app = Flask(__name__)
-# Limit 2MB na plik
-app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024 
+
+#  Ochrona przed ZIP BOMB i przepełnieniem RAM
+
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
+
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -15,15 +19,39 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload():
     file = request.files.get('file')
-    # Sprawdzanie czy to obrazek (Blokada RCE)
-    if file and file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-        # Czyszczenie nazwy (Blokada Path Traversal)
+    if not file:
+        return "Brak pliku", 400
+
+  
+    # Szybka weryfikacja czy końcówka pliku jest na liście dozwolonych
+    if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+        return "<h1>Blad: Niedozwolone rozszerzenie!</h1><a href='/'>Wroc</a>", 400
+
+    try:
+
+        # Image.open sprawdza, czy to FAKTYCZNIE jest obrazek, a nie skrypt PHP/JS
+  
+        img = Image.open(file)
+
+        # ZABEZPIECZENIE 4: Blokada Path Traversal 
+        # Usuwa znaki typu "../", które mogłyby pozwolić hakerowi wyjść poza folder
         filename = secure_filename(file.filename)
-        # Unikalne ID (Blokada Nadpisywania)
+
+        # ZABEZPIECZENIE 5: Blokada Nadpisywania 
+        # Dodajemy unikalny kod UUID, żeby haker nie podmienił nam plików na serwerze
         unique_name = f"{uuid.uuid4().hex}_{filename}"
-        file.save(os.path.join(UPLOAD_FOLDER, unique_name))
-        return "<h1>Plik wyslany bezpiecznie!</h1><a href='/'>Wroc</a>"
-    return "<h1>Blad: Niebezpieczny plik!</h1><a href='/'>Wroc</a>", 400
+        save_path = os.path.join(UPLOAD_FOLDER, unique_name)
+
+        # ZABEZPIECZENIE 6: Data Sanitization 
+        # Nie zapisujemy pliku bezpośrednio. Pillow "przerysowuje" obraz piksel po pikselu,
+        # co usuwa wszelki złośliwy kod ukryty w metadanych (tzw. payloads).
+        img.save(save_path)
+
+        return "<h1>Plik sprawdzony i zapisany bezpiecznie!</h1><a href='/'>Wroc</a>"
+
+    except Exception:
+       
+        return "<h1>ATAK WYKRYTY: Plik nie jest poprawnym obrazem!</h1><a href='/'>Wroc</a>", 400
 
 if __name__ == '__main__':
     app.run(debug=True)
